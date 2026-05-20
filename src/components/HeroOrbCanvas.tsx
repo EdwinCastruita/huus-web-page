@@ -348,28 +348,48 @@ export default function HeroOrbCanvas() {
       color: idx % 2 === 0 ? new THREE.Color("#22d3ee") : new THREE.Color("#d946ef"),
     }));
 
-    const packetPositions = new Float32Array(packets.length * 3);
+    // Multi-point data trails (comets) configuration
+    const TRAIL_LENGTH = 5;
+    const packetPositions = new Float32Array(packets.length * TRAIL_LENGTH * 3);
+    const packetColors = new Float32Array(packets.length * TRAIL_LENGTH * 3);
+
+    packets.forEach((p, idx) => {
+      for (let s = 0; s < TRAIL_LENGTH; s++) {
+        const pointIdx = idx * TRAIL_LENGTH + s;
+        // Exponential brightness decay of the trailing nodes
+        const decay = Math.pow(0.55, s);
+        packetColors[pointIdx * 3] = p.color.r * decay;
+        packetColors[pointIdx * 3 + 1] = p.color.g * decay;
+        packetColors[pointIdx * 3 + 2] = p.color.b * decay;
+      }
+    });
+
     const packetsGeo = new THREE.BufferGeometry();
     packetsGeo.setAttribute("position", new THREE.BufferAttribute(packetPositions, 3));
-
-    const packetColors = new Float32Array(packets.length * 3);
-    packets.forEach((p, idx) => {
-      packetColors[idx * 3] = p.color.r;
-      packetColors[idx * 3 + 1] = p.color.g;
-      packetColors[idx * 3 + 2] = p.color.b;
-    });
     packetsGeo.setAttribute("color", new THREE.BufferAttribute(packetColors, 3));
 
     const packetsMat = new THREE.PointsMaterial({
-      size: 0.09,
+      size: 0.075,
       vertexColors: true,
       transparent: true,
-      opacity: 1.0,
+      opacity: 0.0, // controlled dynamically by the cinematic intro
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
     const packetPoints = new THREE.Points(packetsGeo, packetsMat);
     orbGroup.add(packetPoints);
+
+    // Mouse Parallax movement setup
+    const targetRotation = { x: 0, y: 0 };
+    const currentRotation = { x: 0, y: 0 };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth) - 0.5;
+      const y = (e.clientY / window.innerHeight) - 0.5;
+      targetRotation.x = y * 0.22; // subtle vertical tilt
+      targetRotation.y = x * 0.35; // suttle horizontal rotation
+    };
+    window.addEventListener("mousemove", handleMouseMove);
 
     let lastT = 0;
     let rafId = 0;
@@ -384,43 +404,85 @@ export default function HeroOrbCanvas() {
     };
 
     const radius = 1.62;
+    const easeOutExpo = (x: number) => (x === 1 ? 1 : 1 - Math.pow(2, -10 * x));
+
     const animate = () => {
       const t = clock.getElapsedTime();
       const dt = lastT === 0 ? 0.016 : t - lastT;
       lastT = t;
 
-      // Update energy packets
+      // Cinematic Intro timing configurations
+      const introProgress = Math.min(1, t / 3.0);
+      const introFactor = easeOutExpo(introProgress); // Base scale/brightness intro factor (0s - 3s)
+      
+      const globeProgress = Math.min(1, Math.max(0, (t - 0.5) / 1.5));
+      const globeFactor = easeOutExpo(globeProgress); // Dotted map sweep intro factor (0.5s - 2s)
+
+      const strandsProgress = Math.min(1, Math.max(0, (t - 1.0) / 1.5));
+      const strandsFactor = easeOutExpo(strandsProgress); // Connection lines / energy network intro (1s - 2.5s)
+
+      // Smooth mouse follow parallax calculation
+      currentRotation.x += (targetRotation.x - currentRotation.x) * 0.05;
+      currentRotation.y += (targetRotation.y - currentRotation.y) * 0.05;
+
+      // Update energy packet positions with comet trails
       const packetAttr = packetsGeo.getAttribute("position") as THREE.BufferAttribute;
       packets.forEach((p, idx) => {
-        p.progress += dt * p.speed;
-        if (p.progress > 1) {
-          p.progress = 0;
-          if (Math.random() > 0.5) {
-            const temp = p.n1;
-            p.n1 = p.n2;
-            p.n2 = temp;
+        if (t > 1.2) { // start moving once intro has initialized
+          p.progress += dt * p.speed;
+          if (p.progress > 1) {
+            p.progress = 0;
+            if (Math.random() > 0.5) {
+              const temp = p.n1;
+              p.n1 = p.n2;
+              p.n2 = temp;
+            }
           }
         }
-        const currentPos = new THREE.Vector3().lerpVectors(p.n1, p.n2, p.progress);
-        currentPos.normalize().multiplyScalar(1.635);
-        packetAttr.setXYZ(idx, currentPos.x, currentPos.y, currentPos.z);
+
+        for (let s = 0; s < TRAIL_LENGTH; s++) {
+          const pointIdx = idx * TRAIL_LENGTH + s;
+          // Progress offset for trailing points
+          const trailProgress = Math.max(0, p.progress - s * 0.018);
+          const currentPos = new THREE.Vector3().lerpVectors(p.n1, p.n2, trailProgress);
+          currentPos.normalize().multiplyScalar(1.635);
+          packetAttr.setXYZ(pointIdx, currentPos.x, currentPos.y, currentPos.z);
+        }
       });
       packetAttr.needsUpdate = true;
 
-      // Pulse node sizes dynamically
-      nodesMat.size = 0.07 + Math.sin(t * 5) * 0.02;
-      pinkNodesMat.size = 0.06 + Math.cos(t * 4) * 0.018;
-      packetsMat.size = 0.08 + Math.sin(t * 7) * 0.02;
+      // Pulse node sizes and material opacities dynamically
+      nodesMat.size = (0.07 + Math.sin(t * 5) * 0.02) * (0.3 + 0.7 * strandsFactor);
+      pinkNodesMat.size = (0.06 + Math.cos(t * 4) * 0.018) * (0.3 + 0.7 * strandsFactor);
+      packetsMat.size = (0.065 + Math.sin(t * 7) * 0.015) * (0.3 + 0.7 * strandsFactor);
+
+      nodesMat.opacity = 0.85 * strandsFactor;
+      pinkNodesMat.opacity = 0.85 * strandsFactor;
+      linesMat.opacity = 0.28 * strandsFactor;
+      packetsMat.opacity = strandsFactor;
 
       for (let i = 0; i < strandLines.length; i += 1) {
         const line = strandLines[i];
         const def = strandDefs[i];
         const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
+        
+        // Fade in strand opacities
+        const isRight = def.phi > 0;
+        (line.material as THREE.LineBasicMaterial).opacity = (isRight ? 0.5 : 0.45) * strandsFactor;
+
         for (let j = 0; j < strandPointCount; j += 1) {
           const v = j / (strandPointCount - 1);
           const theta = -Math.PI * 0.98 + v * Math.PI * 1.96;
-          const drift = Math.sin(theta * 2.15 + t * def.speed + def.phase) * def.amp;
-          const localR = radius + Math.sin(theta * 1.7 + t * 0.35 + def.phase) * 0.02;
+          
+          // Double harmonic wave for organic liquid-plasma motion
+          const drift = Math.sin(theta * 2.15 + t * def.speed + def.phase) * def.amp * 0.82 +
+                        Math.cos(theta * 4.3 - t * def.speed * 1.4 + def.phase * 2) * def.amp * 0.22;
+          
+          // Multi-frequency radial resonance
+          const localR = radius + 
+                         Math.sin(theta * 1.7 + t * 0.35 + def.phase) * 0.016 +
+                         Math.cos(theta * 3.4 - t * 0.7 + def.phase) * 0.006;
+
           const x = localR * Math.sin(theta) * Math.cos(def.phi + drift);
           const y = localR * Math.cos(theta);
           const z = localR * Math.sin(theta) * Math.sin(def.phi + drift);
@@ -433,14 +495,25 @@ export default function HeroOrbCanvas() {
         const line = waveLines[i];
         const def = waveDefs[i];
         const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
+        
+        (line.material as THREE.LineBasicMaterial).opacity = 0.28 * strandsFactor;
+
         for (let j = 0; j < wavePointCount; j += 1) {
           const u = -1 + (j / (wavePointCount - 1)) * 2;
           const yy = def.y * 0.86;
-          const zOffset = Math.sin(u * 3.1 + t * def.speed + def.phase) * def.amp;
+          
+          // Double harmonic drift horizontal offset
+          const zOffset = Math.sin(u * 3.1 + t * def.speed + def.phase) * def.amp * 0.78 +
+                          Math.cos(u * 6.2 - t * def.speed * 1.3) * def.amp * 0.22;
+
           const x = u * 1.65;
           const y = yy + zOffset * 0.35;
           const inside = radius * radius - y * y - x * x;
-          const z = inside > 0 ? Math.sqrt(inside) * Math.sin(u * 1.1 + t * 0.25) * 0.35 : 0;
+          
+          // Dynamic dual wave ripples
+          const ripple = Math.sin(u * 1.1 + t * 0.25) * 0.75 + 
+                         Math.cos(u * 2.2 - t * 0.53) * 0.25;
+          const z = inside > 0 ? Math.sqrt(inside) * ripple * 0.35 : 0;
           attr.setXYZ(j, x, y, z);
         }
         attr.needsUpdate = true;
@@ -450,12 +523,19 @@ export default function HeroOrbCanvas() {
         const line = latitudeLines[i];
         const def = latitudeDefs[i];
         const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
+        
+        (line.material as THREE.LineBasicMaterial).opacity = 0.26 * strandsFactor;
+
         const y = def.yNorm * radius;
         const rrBase = Math.sqrt(Math.max(0, radius * radius - y * y));
         for (let j = 0; j < latitudePointCount; j += 1) {
           const u = j / (latitudePointCount - 1);
           const a = u * Math.PI * 2;
-          const wave = Math.sin(a * 3.4 + t * def.speed + def.phase) * 0.03;
+          
+          // Double harmonic ring warp
+          const wave = Math.sin(a * 3.4 + t * def.speed + def.phase) * 0.024 +
+                       Math.cos(a * 6.8 - t * def.speed * 1.2) * 0.008;
+
           const rr = rrBase + wave;
           const x = rr * Math.cos(a);
           const z = rr * Math.sin(a);
@@ -464,16 +544,21 @@ export default function HeroOrbCanvas() {
         attr.needsUpdate = true;
       }
 
-      orbGroup.rotation.y = t * 0.17;
+      // Group rotation (incorporating mouse parallax and auto rotation)
+      orbGroup.rotation.y = t * 0.17 + currentRotation.y;
       orbGroup.rotation.z = Math.sin(t * 0.28) * 0.028;
-      orbGroup.rotation.x = Math.sin(t * 0.2) * 0.02;
+      orbGroup.rotation.x = currentRotation.x + Math.sin(t * 0.2) * 0.02;
+
       stars.rotation.y = -t * 0.08;
       stars.rotation.z = Math.sin(t * 0.22) * 0.05;
-      starsMat.opacity = 0.52 + Math.sin(t * 1.4) * 0.06;
-      hemiGlowMat.opacity = 0.58 + Math.sin(t * 0.7) * 0.05;
-      glowMat.opacity = 0.14 + Math.sin(t * 0.65) * 0.025;
-      coreGlowMat.opacity = 0.1 + Math.sin(t * 0.95) * 0.035;
-      coreGlow.scale.setScalar(1 + Math.sin(t * 0.6) * 0.018);
+
+      // Scaled elements according to introductory factor
+      globeMat.opacity = 0.55 * globeFactor;
+      starsMat.opacity = (0.52 + Math.sin(t * 1.4) * 0.06) * introFactor;
+      hemiGlowMat.opacity = (0.58 + Math.sin(t * 0.7) * 0.05) * introFactor;
+      glowMat.opacity = (0.14 + Math.sin(t * 0.65) * 0.025) * introFactor;
+      coreGlowMat.opacity = (0.1 + Math.sin(t * 0.95) * 0.035) * introFactor;
+      coreGlow.scale.setScalar((1 + Math.sin(t * 0.6) * 0.018) * introFactor);
 
       renderer.render(scene, camera);
       rafId = requestAnimationFrame(animate);
@@ -486,6 +571,7 @@ export default function HeroOrbCanvas() {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", handleMouseMove);
       renderer.dispose();
       baseGeometry.dispose();
       baseMaterial.dispose();
