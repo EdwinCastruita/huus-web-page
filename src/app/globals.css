@@ -1,26 +1,137 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --blue-primary: #0026ff;
+  --blue-dark: #00041a;
+  --blue-mid: #021085;
+  --blue-light: #0b33ff;
+  --pink-cta: #d946ef;
+  --cyan-accent: #22d3ee;
+  --white: #ffffff;
+  --off-white: #f1f5f9;
+  --dark-text: #0f172a;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-blue-primary: var(--blue-primary);
+  --color-blue-dark: var(--blue-dark);
+  --color-blue-mid: var(--blue-mid);
+  --color-pink-cta: var(--pink-cta);
+  --color-cyan-accent: var(--cyan-accent);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --animate-float-orb: float-orb 10s ease-in-out infinite;
+  --animate-spin-slow: spin-slow 30s linear infinite;
+  --animate-spin-reverse: spin-reverse 20s linear infinite;
+  --animate-infinite-scroll: infinite-scroll 35s linear infinite;
+  --animate-pulse-slow: pulse-slow 6s ease-in-out infinite;
+  --animate-wave-drift: wave-drift 8s ease-in-out infinite;
+  --animate-wave-flow: wave-flow 10s linear infinite;
+  --animate-energy-flow: energy-flow 4s linear infinite;
+  --animate-node-pulse: node-pulse 2s ease-in-out infinite;
+
+  @keyframes float-orb {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50%       { transform: translateY(-10px) scale(1.015); }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes spin-reverse {
+    from { transform: rotate(360deg); }
+    to   { transform: rotate(0deg); }
+  }
+  @keyframes infinite-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.6; }
+    50%       { opacity: 1; }
+  }
+  @keyframes wave-drift {
+    0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+    50% { transform: translateY(-6px) rotate(1.2deg) scale(1.015); }
+  }
+  @keyframes wave-flow {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -160; }
+  }
+  @keyframes energy-flow {
+    from { stroke-dashoffset: 80; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes node-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 1; }
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background-color: #ffffff;
+  color: var(--dark-text);
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--blue-dark); }
+::-webkit-scrollbar-thumb { background: #5b21b6; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+
+/* ── Partners marquee ── */
+.partners-track {
+  display: flex;
+  width: max-content;
+  animation: var(--animate-infinite-scroll);
+}
+
+/* ── Diagonal clip utilities ── */
+.clip-diagonal-right {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 85%);
+}
+.clip-diagonal-left {
+  clip-path: polygon(0 0, 100% 0, 25% 100%, 0 100%);
+}
+.clip-white-triangle {
+  clip-path: polygon(100% 60%, 0% 100%, 100% 100%);
+}
+
+/* ── Main page background: diagonal triple cut ── */
+.bg-triple-cut {
+  background-color: #0500c8;
+  background-image: linear-gradient(
+    145deg,
+    #0500c8 0%,
+    #0500c8 33%,
+    #ffffff 33%,
+    #ffffff 50%,
+    #0500c8 50%,
+    #0500c8 73%,
+    #ffffff 73%,
+    #ffffff 100%
+  );
+}
+
+/* ── Text gradient ── */
+.text-gradient-white-cyan {
+  background: linear-gradient(135deg, #ffffff 30%, #a5f3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glass card for dropdowns ── */
+.glass-card {
+  background: rgba(5, 8, 120, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
