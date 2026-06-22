@@ -92,7 +92,7 @@ export default function Home() {
         {/* Hero content (sits on top of orb) */}
         <div className="relative z-10 flex flex-col items-center max-w-3xl mx-auto">
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight tracking-tight drop-shadow-lg">
-            Conectando en<br />Cualquier Lugar
+            Conectando en<br />cualquier lugar de México
           </h1>
           <p className="mt-6 text-sm sm:text-base text-white/75 max-w-xl leading-relaxed">
             Internet dedicado, alta disponibilidad y seguridad empresarial con monitoreo

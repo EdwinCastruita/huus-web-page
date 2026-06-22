@@ -10,7 +10,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Huus – Conectando en Cualquier Lugar | Internet Dedicado y Ciberseguridad",
+  title: "Huus – Contactando en cualquier lugar de México | Internet Dedicado y Ciberseguridad",
   description:
     "Internet dedicado, alta disponibilidad y seguridad empresarial con monitoreo 24/7/365. Diseñamos tu red para que tu operación siga corriendo, pase lo que pase.",
   keywords: ["huus", "internet dedicado", "ciberseguridad", "servicios administrados", "NOC 24/7"],

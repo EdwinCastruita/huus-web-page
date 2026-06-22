@@ -26,7 +26,7 @@ export default function HeroOrbCanvas() {
 
     const baseGeometry = new THREE.SphereGeometry(1.65, 96, 96);
     const baseMaterial = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#4a66ff"),
+      color: new THREE.Color("#312e81"),
       transparent: true,
       opacity: 0.16,
     });
@@ -53,7 +53,7 @@ export default function HeroOrbCanvas() {
 
     const hemiGlowMat = new THREE.SpriteMaterial({
       map: hemiGlowTexture ?? undefined,
-      color: new THREE.Color("#c57dff"),
+      color: new THREE.Color("#8b5cf6"),
       transparent: true,
       opacity: 0.6,
       depthWrite: false,
@@ -69,14 +69,14 @@ export default function HeroOrbCanvas() {
     const strandDefs: Array<{ phi: number; amp: number; phase: number; speed: number; color: THREE.Color }> = [];
     const strandPointCount = 120;
 
-    for (let i = 0; i < 52; i += 1) {
-      const t = i / 51;
+    for (let i = 0; i < 16; i += 1) {
+      const t = i / 15;
       const phi = -Math.PI * 0.92 + t * Math.PI * 1.84;
-      const amp = 0.09 + t * 0.1;
+      const amp = 0.06 + t * 0.08;
       const phase = t * Math.PI * 2.3;
-      const speed = 0.18 + t * 0.18;
+      const speed = 0.12 + t * 0.12;
       const isRight = t > 0.5;
-      const color = new THREE.Color(isRight ? "#cb78ff" : "#7de9ff");
+      const color = new THREE.Color(isRight ? "#a78bfa" : "#818cf8");
       strandDefs.push({ phi, amp, phase, speed, color });
 
       const pos = new Float32Array(strandPointCount * 3);
@@ -85,7 +85,7 @@ export default function HeroOrbCanvas() {
       const mat = new THREE.LineBasicMaterial({
         color,
         transparent: true,
-        opacity: isRight ? 0.5 : 0.45,
+        opacity: isRight ? 0.32 : 0.28,
       });
       const line = new THREE.Line(geo, mat);
       strandLines.push(line);
@@ -95,7 +95,8 @@ export default function HeroOrbCanvas() {
     const waveLines: THREE.Line[] = [];
     const waveDefs: Array<{ y: number; amp: number; speed: number; phase: number; color: THREE.Color }> = [];
     const wavePointCount = 120;
-    for (let i = 0; i < 18; i += 1) {
+    // Set to 0 to safely remove wave lines and dramatically declutter the orb
+    for (let i = 0; i < 0; i += 1) {
       const t = i / 17;
       waveDefs.push({
         y: -1.2 + t * 2.4,
@@ -120,14 +121,14 @@ export default function HeroOrbCanvas() {
     const latitudeLines: THREE.Line[] = [];
     const latitudeDefs: Array<{ yNorm: number; speed: number; phase: number; color: THREE.Color }> = [];
     const latitudePointCount = 160;
-    for (let i = 0; i < 14; i += 1) {
-      const t = i / 13;
-      const yNorm = -0.8 + t * 1.6;
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      const yNorm = -0.7 + t * 1.4;
       latitudeDefs.push({
         yNorm,
-        speed: 0.2 + t * 0.24,
+        speed: 0.12 + t * 0.16,
         phase: i * 0.52,
-        color: new THREE.Color(i > 7 ? "#c987ff" : "#79e8ff"),
+        color: new THREE.Color(i > 3 ? "#a78bfa" : "#818cf8"),
       });
       const pos = new Float32Array(latitudePointCount * 3);
       const geo = new THREE.BufferGeometry();
@@ -135,14 +136,14 @@ export default function HeroOrbCanvas() {
       const mat = new THREE.LineBasicMaterial({
         color: latitudeDefs[i].color,
         transparent: true,
-        opacity: 0.26,
+        opacity: 0.15,
       });
       const line = new THREE.Line(geo, mat);
       latitudeLines.push(line);
       orbGroup.add(line);
     }
 
-    const starCount = 350;
+    const starCount = 400;
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i += 1) {
       const u = Math.random();
@@ -158,8 +159,8 @@ export default function HeroOrbCanvas() {
     const starsGeo = new THREE.BufferGeometry();
     starsGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
     const starsMat = new THREE.PointsMaterial({
-      color: new THREE.Color("#9fefff"),
-      size: 0.018,
+      color: new THREE.Color("#c7d2fe"),
+      size: 0.011, // ultra-fine diamond dust
       transparent: true,
       opacity: 0.65,
       blending: THREE.AdditiveBlending,
@@ -170,7 +171,7 @@ export default function HeroOrbCanvas() {
 
     const glowGeo = new THREE.SphereGeometry(1.8, 64, 64);
     const glowMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#516dff"),
+      color: new THREE.Color("#4338ca"),
       transparent: true,
       opacity: 0.14,
       side: THREE.BackSide,
@@ -180,7 +181,7 @@ export default function HeroOrbCanvas() {
 
     const coreGlowGeo = new THREE.SphereGeometry(1.52, 64, 64);
     const coreGlowMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#8f7bff"),
+      color: new THREE.Color("#5b21b6"),
       transparent: true,
       opacity: 0.1,
       blending: THREE.AdditiveBlending,
@@ -189,16 +190,36 @@ export default function HeroOrbCanvas() {
     const coreGlow = new THREE.Mesh(coreGlowGeo, coreGlowMat);
     orbGroup.add(coreGlow);
 
-    // --- Dotted World Map Globe ---
+    // --- Dotted World Map Globe & Detailed Mexico ---
     const mapCanvas = document.createElement("canvas");
     mapCanvas.width = 512;
     mapCanvas.height = 256;
     const mctx = mapCanvas.getContext("2d");
+
+    // Coordinates for high-fidelity Mexico polygon in [px, py] (range 0-360, 0-180)
+    const mexicoPoly = [
+      [63.0, 57.5], [65.0, 61.5], [70.1, 67.1], [69.7, 65.9], [66.5, 61.0], [65.2, 58.2],
+      [69.0, 58.7], [73.6, 58.3], [77.0, 60.5], [79.5, 61.3], [82.9, 64.1], [82.1, 67.7],
+      [83.9, 70.8], [85.5, 71.9], [88.2, 71.4], [89.5, 70.2], [89.6, 68.9], [93.1, 68.5],
+      [92.6, 69.8], [91.7, 71.5], [89.2, 72.2], [87.8, 75.5], [84.8, 73.8], [80.1, 73.2],
+      [75.7, 70.9], [74.7, 69.4], [73.6, 66.8], [69.1, 62.1]
+    ];
+
+    const cdmxPx = 80.8668;
+    const cdmxPy = 70.5674;
+    const mexicoScale = 2.6; // Ultra-premium scaling factor to make Mexico magnificent and clearly visible
+
+    const scaledMexicoPoly = mexicoPoly.map(([px, py]) => [
+      cdmxPx + (px - cdmxPx) * mexicoScale,
+      cdmxPy + (py - cdmxPy) * mexicoScale
+    ]);
+
     if (mctx) {
       mctx.fillStyle = "#000000";
       mctx.fillRect(0, 0, 512, 256);
-      mctx.fillStyle = "#ffffff";
       
+      // Draw world continents in white
+      mctx.fillStyle = "#ffffff";
       const continentPolys = [
         [[110, 10], [135, 12], [130, 22], [115, 22]],
         [[40, 25], [105, 20], [125, 45], [95, 75], [82, 95], [68, 90], [55, 60], [38, 45]],
@@ -219,9 +240,22 @@ export default function HeroOrbCanvas() {
         mctx.closePath();
         mctx.fill();
       });
+
+      // Draw detailed Mexico polygon on top in RED
+      mctx.fillStyle = "#ff0000";
+      mctx.beginPath();
+      scaledMexicoPoly.forEach(([px, py], i) => {
+        const sx = (px / 360) * 512;
+        const sy = (py / 180) * 256;
+        if (i === 0) mctx.moveTo(sx, sy);
+        else mctx.lineTo(sx, sy);
+      });
+      mctx.closePath();
+      mctx.fill();
     }
 
     const globePoints: THREE.Vector3[] = [];
+    const mexicoPoints: THREE.Vector3[] = [];
     const mctx2 = mapCanvas.getContext("2d");
     if (mctx2) {
       const imgData = mctx2.getImageData(0, 0, 512, 256);
@@ -242,7 +276,13 @@ export default function HeroOrbCanvas() {
             const sx = globeRadius * Math.sin(phi) * Math.cos(theta);
             const sy = globeRadius * Math.cos(phi);
             const sz = globeRadius * Math.sin(phi) * Math.sin(theta);
-            globePoints.push(new THREE.Vector3(sx, sy, sz));
+            
+            // Check if it is Mexico (Red high, Green and Blue channels low)
+            if (data[idx + 1] < 100 && data[idx + 2] < 100) {
+              mexicoPoints.push(new THREE.Vector3(sx, sy, sz));
+            } else {
+              globePoints.push(new THREE.Vector3(sx, sy, sz));
+            }
           }
         }
       }
@@ -250,7 +290,7 @@ export default function HeroOrbCanvas() {
 
     const globeGeo = new THREE.BufferGeometry().setFromPoints(globePoints);
     const globeMat = new THREE.PointsMaterial({
-      color: new THREE.Color("#4a66ff"),
+      color: new THREE.Color("#3730a3"),
       size: 0.024,
       transparent: true,
       opacity: 0.55,
@@ -259,6 +299,87 @@ export default function HeroOrbCanvas() {
     });
     const globe = new THREE.Points(globeGeo, globeMat);
     orbGroup.add(globe);
+
+    // --- Mexico Glowing Particles ---
+    const mexicoGeo = new THREE.BufferGeometry().setFromPoints(mexicoPoints);
+    const mexicoMat = new THREE.PointsMaterial({
+      color: new THREE.Color("#f3e8ff"), // glowing lavender-white
+      size: 0.032, // slightly larger dots
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const mexico = new THREE.Points(mexicoGeo, mexicoMat);
+    orbGroup.add(mexico);
+
+    // --- Mexico Glowing Neon Outline ---
+    const mexicoOutlinePoints: THREE.Vector3[] = [];
+    const outlineRadius = 1.56;
+    scaledMexicoPoly.forEach(([px, py]) => {
+      const u = px / 360;
+      const v = py / 180;
+      const theta = u * Math.PI * 2 - Math.PI;
+      const phi = v * Math.PI;
+
+      const sx = outlineRadius * Math.sin(phi) * Math.cos(theta);
+      const sy = outlineRadius * Math.cos(phi);
+      const sz = outlineRadius * Math.sin(phi) * Math.sin(theta);
+      mexicoOutlinePoints.push(new THREE.Vector3(sx, sy, sz));
+    });
+
+    const mexicoOutlineGeo = new THREE.BufferGeometry().setFromPoints(mexicoOutlinePoints);
+    const mexicoOutlineMat = new THREE.LineBasicMaterial({
+      color: new THREE.Color("#c084fc"), // bright glowing lavender
+      transparent: true,
+      opacity: 0.85,
+    });
+    const mexicoOutline = new THREE.LineLoop(mexicoOutlineGeo, mexicoOutlineMat);
+    orbGroup.add(mexicoOutline);
+
+    // --- CDMX Pulsing Connectivity Beacon ---
+    const cdmxU = cdmxPx / 360;
+    const cdmxV = cdmxPy / 180;
+    const cdmxTheta = cdmxU * Math.PI * 2 - Math.PI;
+    const cdmxPhi = cdmxV * Math.PI;
+    const beaconRadius = 1.57;
+
+    const cdmxPos = new THREE.Vector3(
+      beaconRadius * Math.sin(cdmxPhi) * Math.cos(cdmxTheta),
+      beaconRadius * Math.cos(cdmxPhi),
+      beaconRadius * Math.sin(cdmxPhi) * Math.sin(cdmxTheta)
+    );
+
+    const beaconGeo = new THREE.SphereGeometry(0.045, 16, 16);
+    const beaconMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#c084fc"), // glowing lavender
+      transparent: true,
+      opacity: 0.95,
+    });
+    const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+    beacon.position.copy(cdmxPos);
+    orbGroup.add(beacon);
+
+    // 3 expanding rings around CDMX
+    const ringGeo = new THREE.RingGeometry(0.01, 0.15, 32);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#a855f7"), // glowing violet/purple
+      transparent: true,
+      opacity: 0.8,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    
+    const rings: THREE.Mesh[] = [];
+    const ringCount = 3;
+    for (let i = 0; i < ringCount; i++) {
+      const ring = new THREE.Mesh(ringGeo, ringMat.clone());
+      ring.position.copy(cdmxPos);
+      const normal = cdmxPos.clone().normalize();
+      ring.lookAt(cdmxPos.clone().add(normal));
+      orbGroup.add(ring);
+      rings.push(ring);
+    }
 
     // --- Interconnected Pulsing Nodes & Energy Transmission Network ---
     const nodeCount = 18;
@@ -274,7 +395,7 @@ export default function HeroOrbCanvas() {
 
     const nodesGeo = new THREE.BufferGeometry().setFromPoints(nodes);
     const nodesMat = new THREE.PointsMaterial({
-      color: new THREE.Color("#22d3ee"),
+      color: new THREE.Color("#818cf8"),
       size: 0.085,
       transparent: true,
       opacity: 0.85,
@@ -296,7 +417,7 @@ export default function HeroOrbCanvas() {
 
     const pinkNodesGeo = new THREE.BufferGeometry().setFromPoints(pinkNodes);
     const pinkNodesMat = new THREE.PointsMaterial({
-      color: new THREE.Color("#d946ef"),
+      color: new THREE.Color("#c084fc"),
       size: 0.075,
       transparent: true,
       opacity: 0.85,
@@ -331,7 +452,7 @@ export default function HeroOrbCanvas() {
     const linesGeo = new THREE.BufferGeometry();
     linesGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(linePositions), 3));
     const linesMat = new THREE.LineBasicMaterial({
-      color: new THREE.Color("#8f7bff"),
+      color: new THREE.Color("#4f46e5"),
       transparent: true,
       opacity: 0.28,
       blending: THREE.AdditiveBlending,
@@ -345,7 +466,7 @@ export default function HeroOrbCanvas() {
       n2,
       progress: Math.random(),
       speed: 0.38 + Math.random() * 0.45,
-      color: idx % 2 === 0 ? new THREE.Color("#22d3ee") : new THREE.Color("#d946ef"),
+      color: idx % 2 === 0 ? new THREE.Color("#818cf8") : new THREE.Color("#c084fc"),
     }));
 
     // Multi-point data trails (comets) configuration
@@ -379,17 +500,63 @@ export default function HeroOrbCanvas() {
     const packetPoints = new THREE.Points(packetsGeo, packetsMat);
     orbGroup.add(packetPoints);
 
-    // Mouse Parallax movement setup
-    const targetRotation = { x: 0, y: 0 };
-    const currentRotation = { x: 0, y: 0 };
+    // --- Fiber Optic 3D Arcs from CDMX to Global Nodes ---
+    const arcLines: THREE.Line[] = [];
+    const arcCurves: THREE.QuadraticBezierCurve3[] = [];
+    
+    // Select well-distributed global nodes to connect with CDMX
+    const allGlobalNodes = [...nodes, ...pinkNodes];
+    const targetNodeIndices = [1, 5, 10, 15, 22]; // Select 5 diverse nodes on the sphere
+    const targetNodes: THREE.Vector3[] = [];
+    targetNodeIndices.forEach((idx) => {
+      if (allGlobalNodes[idx]) {
+        targetNodes.push(allGlobalNodes[idx]);
+      }
+    });
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth) - 0.5;
-      const y = (e.clientY / window.innerHeight) - 0.5;
-      targetRotation.x = y * 0.22; // subtle vertical tilt
-      targetRotation.y = x * 0.35; // suttle horizontal rotation
-    };
-    window.addEventListener("mousemove", handleMouseMove);
+    targetNodes.forEach((node) => {
+      const midPoint = new THREE.Vector3().addVectors(cdmxPos, node).multiplyScalar(0.5);
+      const dist = cdmxPos.distanceTo(node);
+      const normal = midPoint.clone().normalize();
+      // Height of arc proportional to distance
+      const controlPoint = midPoint.clone().add(normal.multiplyScalar(dist * 0.28));
+      const curve = new THREE.QuadraticBezierCurve3(cdmxPos, controlPoint, node);
+      arcCurves.push(curve);
+
+      const pts = curve.getPoints(40);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const mat = new THREE.LineBasicMaterial({
+        color: new THREE.Color("#a78bfa"), // glowing purple/lavender
+        transparent: true,
+        opacity: 0.35,
+        blending: THREE.AdditiveBlending,
+      });
+      const line = new THREE.Line(geo, mat);
+      orbGroup.add(line);
+      arcLines.push(line);
+    });
+
+    // --- Curved Arc Laser Packets ---
+    const arcPackets = targetNodes.map((node, idx) => ({
+      curveIndex: idx,
+      progress: Math.random(),
+      speed: 0.35 + Math.random() * 0.4,
+      color: new THREE.Color("#c084fc"), // glowing lavender
+    }));
+
+    const arcPacketsGeo = new THREE.BufferGeometry();
+    const arcPacketsPos = new Float32Array(arcPackets.length * 3);
+    arcPacketsGeo.setAttribute("position", new THREE.BufferAttribute(arcPacketsPos, 3));
+    const arcPacketsMat = new THREE.PointsMaterial({
+      color: new THREE.Color("#c084fc"),
+      size: 0.085,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const arcPacketsPoints = new THREE.Points(arcPacketsGeo, arcPacketsMat);
+    orbGroup.add(arcPacketsPoints);
 
     let lastT = 0;
     let rafId = 0;
@@ -420,10 +587,6 @@ export default function HeroOrbCanvas() {
 
       const strandsProgress = Math.min(1, Math.max(0, (t - 1.0) / 1.5));
       const strandsFactor = easeOutExpo(strandsProgress); // Connection lines / energy network intro (1s - 2.5s)
-
-      // Smooth mouse follow parallax calculation
-      currentRotation.x += (targetRotation.x - currentRotation.x) * 0.05;
-      currentRotation.y += (targetRotation.y - currentRotation.y) * 0.05;
 
       // Update energy packet positions with comet trails
       const packetAttr = packetsGeo.getAttribute("position") as THREE.BufferAttribute;
@@ -456,9 +619,9 @@ export default function HeroOrbCanvas() {
       pinkNodesMat.size = (0.06 + Math.cos(t * 4) * 0.018) * (0.3 + 0.7 * strandsFactor);
       packetsMat.size = (0.065 + Math.sin(t * 7) * 0.015) * (0.3 + 0.7 * strandsFactor);
 
-      nodesMat.opacity = 0.85 * strandsFactor;
-      pinkNodesMat.opacity = 0.85 * strandsFactor;
-      linesMat.opacity = 0.28 * strandsFactor;
+      nodesMat.opacity = 0.75 * strandsFactor;
+      pinkNodesMat.opacity = 0.75 * strandsFactor;
+      linesMat.opacity = 0.16 * strandsFactor;
       packetsMat.opacity = strandsFactor;
 
       for (let i = 0; i < strandLines.length; i += 1) {
@@ -544,16 +707,60 @@ export default function HeroOrbCanvas() {
         attr.needsUpdate = true;
       }
 
-      // Group rotation (incorporating mouse parallax and auto rotation)
-      orbGroup.rotation.y = t * 0.17 + currentRotation.y;
-      orbGroup.rotation.z = Math.sin(t * 0.28) * 0.028;
-      orbGroup.rotation.x = currentRotation.x + Math.sin(t * 0.2) * 0.02;
+      // Group rotation (slower, majestic constant auto-rotation)
+      orbGroup.rotation.y = t * 0.082;
+      orbGroup.rotation.z = Math.sin(t * 0.12) * 0.015;
+      orbGroup.rotation.x = Math.sin(t * 0.08) * 0.015;
 
       stars.rotation.y = -t * 0.08;
       stars.rotation.z = Math.sin(t * 0.22) * 0.05;
+      stars.rotation.x = Math.sin(t * 0.1) * 0.02;
+
+      // Animate CDMX beacon rings expanding and fading
+      rings.forEach((ring, i) => {
+        const phase = (t * 0.7 + i / ringCount) % 1.0;
+        const scale = 0.05 + phase * 3.5;
+        ring.scale.set(scale, scale, 1);
+        (ring.material as THREE.MeshBasicMaterial).opacity = (1.0 - phase) * 0.75 * strandsFactor;
+      });
+
+      // Pulse CDMX beacon core
+      const beaconScale = 1.0 + Math.sin(t * 8) * 0.25;
+      beacon.scale.setScalar(beaconScale * introFactor);
+
+      // Update fiber optic arc laser packets
+      const arcPacketAttr = arcPacketsGeo.getAttribute("position") as THREE.BufferAttribute;
+      arcPackets.forEach((p, idx) => {
+        p.progress += dt * p.speed;
+        if (p.progress > 1.0) {
+          p.progress = 0;
+          p.speed = 0.35 + Math.random() * 0.4;
+        }
+        const curve = arcCurves[p.curveIndex];
+        if (curve) {
+          const currentPos = curve.getPointAt(p.progress);
+          arcPacketAttr.setXYZ(idx, currentPos.x, currentPos.y, currentPos.z);
+        }
+      });
+      arcPacketAttr.needsUpdate = true;
+      arcPacketsMat.opacity = strandsFactor * 0.9;
+
+      // Pulse Mexico points
+      mexicoMat.size = (0.03 + Math.sin(t * 6) * 0.008) * (0.3 + 0.7 * globeFactor);
+      mexicoMat.opacity = (0.75 + Math.sin(t * 6) * 0.15) * globeFactor;
+
+      // Pulse Mexico outline
+      mexicoOutlineMat.opacity = (0.65 + Math.sin(t * 6) * 0.2) * strandsFactor;
+
+      // Dynamic breathing and pulsing of globe elements
+      globeMat.opacity = (0.42 + Math.sin(t * 1.5) * 0.08) * globeFactor;
+      
+      const colBase = new THREE.Color("#312e81").lerp(new THREE.Color("#4f46e5"), 0.5 + 0.5 * Math.sin(t * 0.8));
+      baseMaterial.color.copy(colBase);
+
+      linesMat.opacity = (0.12 + Math.sin(t * 1.5) * 0.04) * strandsFactor;
 
       // Scaled elements according to introductory factor
-      globeMat.opacity = 0.55 * globeFactor;
       starsMat.opacity = (0.52 + Math.sin(t * 1.4) * 0.06) * introFactor;
       hemiGlowMat.opacity = (0.58 + Math.sin(t * 0.7) * 0.05) * introFactor;
       glowMat.opacity = (0.14 + Math.sin(t * 0.65) * 0.025) * introFactor;
@@ -571,7 +778,6 @@ export default function HeroOrbCanvas() {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", handleMouseMove);
       renderer.dispose();
       baseGeometry.dispose();
       baseMaterial.dispose();
@@ -583,6 +789,25 @@ export default function HeroOrbCanvas() {
       starsMat.dispose();
       globeGeo.dispose();
       globeMat.dispose();
+
+      // Clean up Mexico specific resources
+      mexicoGeo.dispose();
+      mexicoMat.dispose();
+      mexicoOutlineGeo.dispose();
+      mexicoOutlineMat.dispose();
+      beaconGeo.dispose();
+      beaconMat.dispose();
+      ringGeo.dispose();
+      ringMat.dispose();
+      rings.forEach((ring) => {
+        (ring.material as THREE.Material).dispose();
+      });
+      arcLines.forEach((line) => {
+        line.geometry.dispose();
+        (line.material as THREE.Material).dispose();
+      });
+      arcPacketsGeo.dispose();
+      arcPacketsMat.dispose();
 
       // Clean up network nodes and lines
       nodesGeo.dispose();
